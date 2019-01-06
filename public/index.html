@@ -7,6 +7,7 @@
   <title>Document</title>
   <style>
     body,#box .before,#btn div .before{
+      /* fixed自动对齐图片位置的功能出不来 */
       background:url(img/323799.jpg) no-repeat fixed;
     }
     /* box */
@@ -17,8 +18,7 @@
       position:relative;
       overflow: hidden;
       margin:50px auto 10px;
-      box-shadow:0 0 20px;
-      
+      box-shadow:0 0 20px;  
     }
     #box .before,#btn div .before{
       content:'';
@@ -52,7 +52,7 @@
     }
     p{
       color:#989898;
-      height:21px;
+      /* height:21px; */
       margin:16px 0;
     }
     .text-white{
@@ -108,7 +108,7 @@
       color:turquoise;
     }
    /* progress-bar */
-   #progress-bar{
+   #progressBar{
      width:600px;
      height:10px;
      margin: 0 auto 10px;
@@ -117,7 +117,7 @@
      border-radius: 5px;
      transition:background .5s;
    }
-   #progress-bar:hover{
+   #progressBar:hover{
     background:rgba(0,0,0,.75);
    }
    #circle{
@@ -136,7 +136,7 @@
     <div id="bar" class="bar"></div>
     <div class="after"></div>
   </div>
-  <div id="progress-bar">
+  <div id="progressBar">
     <div id="circle"></div>
   </div>
   <div>
@@ -172,7 +172,7 @@
       var classes=e.className;
       if(!classes) return false;
       if(classes==c) return true;
-      // 不能用!!classes.search('\\b'+c+'\\b')，因为有可能返回0,表示位置0
+      // 不能用  !!classes.search('\\b'+c+'\\b')，因为有可能返回0,表示位置0
       return classes.search('\\b'+c+'\\b')!=-1; 
     }
     CSSClass.add=function(e,c){
@@ -189,16 +189,60 @@
       e.className=e.className.replace(reg,'');
     }
     var vars=(function(){
-      var obj={
+      return {
         gc:'',
         times:[],
         speed:300,
         interval:null,
         gc_scroll:null,
+        ps:[],
+        can_scroll:true,
+        progressInterval:null
       };
-      return obj;
     })();
     
+    function getH(){
+
+      //获得页面中的歌词的所有P标签
+      var nodeList=bg.childNodes;
+      vars.ps=[];
+      for(var i=0;i<nodeList.length;i++){
+        if(nodeList[i].nodeType==1) vars.ps.push(nodeList[i]);
+      }
+      console.log('--->',nodeList.length,vars.ps.length,vars.times.length)
+
+
+      // for(var i=0;i<nodeList.length;i++){
+      //   console.log(nodeList[i].innerHTML)
+      // }
+      
+    
+      if(vars.ps.currentStyle){//ie
+        vars.pMT=parseFloat(vars.ps[0].currentStyle.marginTop);
+        vars.boxH=parseFloat(box.currentStyle.height);
+      }else if(window.getComputedStyle){
+        vars.pMT=parseFloat(window.getComputedStyle(vars.ps[0],null).marginTop);
+        vars.bgH=parseFloat(window.getComputedStyle(bg,null).height);
+        vars.boxH=parseFloat(window.getComputedStyle(box,null).height);
+      }
+
+       //计算滚动条的长度,设置滚动条高度，用滚动条的高度体现文档的长度
+      // bar.style.cssText=`height:${boxH/bgH*boxH}px`;
+      // bar.setAttribute('style',`height:${boxH/bgH*boxH}px`);
+      vars.barH=vars.boxH/vars.bgH*vars.boxH;
+      vars.scrollDis=0,vars.mv=0;
+    }
+    //因为条歌词的p标签不一定是1行，可能是多行，它们之间的行数不一定相等，所以需要动态获取。
+    function distance(i){
+      if(vars.ps.currentStyle){//ie
+        vars.pH=parseFloat(vars.ps[i].currentStyle.height);
+      }else if(window.getComputedStyle){
+        vars.pH=parseFloat(window.getComputedStyle(vars.ps[i],null).height);
+      }
+      vars.dis=vars.pH+vars.pMT;
+      vars.singleDis=vars.dis/vars.bgH*vars.boxH;
+      // console.log(vars.pH);
+    }
 
     
     //请求歌词
@@ -210,19 +254,49 @@
           vars.gc=xhr.responseText;
           // console.log(vars.gc)
           //获取的歌词进行全局查找，查找全部内容，将查找结果放到数组里面
-          var arr=vars.gc.match(/\[\d{2}:\d{2}\.\d{2}\][\u4e00-\u9fa5]*.*[\u4e00-\u9fa5]*\s+/g);
-          vars.times=vars.gc.match(/\d{2}:\d{2}.\d{2}/g);
+          //\u0800-\u4e00 日文  \uac00-\ud7ff (韩文)
+          // console.log(vars.gc)
+          var arr=vars.gc.match(/\[\d{2}:\d{2}(\.\d{2}\d?)?\][\u4e00-\u9fa5a-zA-Z\u0800-\u4e00\uac00-\ud7ff]*.*[\u4e00-\u9fa5a-zA-Z\u0800-\u4e00\uac00-\ud7ff]*\s*/g);
+          // console.log(arr)
+          var _times=vars.gc.match(/\d{2}:\d{2}(\.\d{2}\d?)?/g);
           // console.log(arr.length,arr)
           //截取出歌词和时间
           vars.gc='';
-          for(var i=0;i<arr.length;i++){
-            arr[i]=arr[i].replace(/\[\d{2}:\d{2}\.\d{2}\]|\s*$/g,'');
-            vars.gc+=`<p dateTime="${vars.times[i]}">${arr[i]}</p>`;
+          var i=0,_i=0;
+          vars.times.splice(0);
+          while(i<arr.length){
+            // console.log(i)
+            arr[i]=arr[i].replace(/\[\d{2}:\d{2}(\.\d{2}\d?)?\]|\s*$/g,'');
+            var temp=_times[i].split(/[\.:]/g);
+            temp=parseInt(temp[0])*60*1000+parseInt(temp[1])*1000+parseInt(temp[2]||0);
+            vars.times.push(temp);
+            vars.gc+=`<p dateTime="${vars.times[_i]}">${arr[i]}`;
+            
             //把时间转换成毫秒
-            vars.times[i]=vars.times[i].split(/[\.:]/g);
-            vars.times[i]=parseInt(vars.times[i][0])*60*1000+parseInt(vars.times[i][1])*1000+parseInt(vars.times[i][2]);
+            for(;i<arr.length-1;i++){
+              var _temp=_times[i+1].split(/[\.:]/g);
+              _temp=parseInt(_temp[0])*60*1000+parseInt(_temp[1])*1000+parseInt(_temp[2]||0);
+              // console.log(i,i+1,temp,_temp)
+              if(temp==_temp){
+                arr[i+1]=arr[i+1].replace(/\[\d{2}:\d{2}(\.\d{2}\d?)?\]|\s*$/g,'');
+                vars.gc+=`<br>${arr[i+1]}`;
+                // i++;
+                // console.log('-------------')
+              }else{
+                _i++;
+                break;//不相同，break
+              }    
+            }
+            vars.gc+=`</p>`
+            i++;
           }
+          // console.log(arr)
+          //插入P标签
           bg.innerHTML=vars.gc;
+          getH();
+           //初始化bg bar的top
+          bg.style.cssText=`top:${0}px;`;
+          bar.style.cssText=`height:${vars.barH}px;top:${0}px`;
           callback&&callback(vars.speed);
         }
       }
@@ -232,63 +306,40 @@
     }
     get_gc(bg);
     
-   
+   //滚动
     function fn(speed){
       speed=speed||800;
-      //获得页面中的歌词的所有P标签
-      var nodeList=bg.childNodes,ps=[],can_scroll=true;
-      for(var i=0;i<nodeList.length;i++){
-        if(nodeList[i].nodeType==1) ps.push(nodeList[i]);
-      }
-      console.log('--->',nodeList.length,vars.times.length)
-      // for(var i=0;i<nodeList.length;i++){
-      //   console.log(nodeList[i].innerHTML)
-      // }
-      if(ps.currentStyle){//ie
-        var pH=parseFloat(ps[0].currentStyle.height);
-        var pMT=parseFloat(ps[0].currentStyle.marginTop);
-        var boxH=parseFloat(box.currentStyle.height);
-      }else if(window.getComputedStyle){
-        var pH=parseFloat(window.getComputedStyle(ps[0],null).height);
-        var pMT=parseFloat(window.getComputedStyle(ps[0],null).marginTop);
-        var bgH=parseFloat(window.getComputedStyle(bg,null).height);
-        var boxH=parseFloat(window.getComputedStyle(box,null).height);
-      }
-      //计算滚动条的长度,设置滚动条高度，用滚动条的高度体现文档的长度
-      // bar.style.cssText=`height:${boxH/bgH*boxH}px`;
-      // bar.setAttribute('style',`height:${boxH/bgH*boxH}px`);
-      bar.style.height=`${boxH/bgH*boxH}px`;
-      bg.style.cssText=`top:${0}px;`;
-      bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${0}px`;
-      var barH=parseFloat(bar.style.height);
-      CSSClass.add(ps[0],'text-white');
+      
+      CSSClass.add(vars.ps[0],'text-white');
       //歌词滚动闭包
-      var scrollDis=0,mv=0;
+     
       vars.gc_scroll=(function(){
         var index=0,time=0;
         return function(){
           time+=speed;
           //歌词滚动
           if(time>vars.times[index]){
+            //根据每个p的高度动态获取滚动距离
+            distance(index);
             //走掉的高度大于box高度的一半
-            if((pH+pMT)*(index+1)>=boxH/2){
+            if(vars.dis*(index)>=vars.boxH/2){
               //剩下的没滚动的总高度大于box高度的一半
-              if((pH+pMT)*(ps.length-index)>=boxH/2){
-                mv-=pH+pMT;
+              if(vars.dis*(vars.ps.length-index)>=vars.boxH/2){
+                vars.mv-=vars.dis;
                 //滚动距离
-                scrollDis+=(pH+pMT)/bgH*boxH;
-                if(can_scroll){
+                vars.scrollDis+=vars.singleDis;
+                if(vars.can_scroll){
                     //歌词滚动
-                  bg.style.cssText=`top:${mv}px;`;
+                  bg.style.cssText=`top:${vars.mv}px;`;
                   //滚动条滚动
-                  bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis}px`
+                  bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
                 }
               }
             }
             //给每个歌词的P标签样式
-            CSSClass.add(ps[index],'text-white');
+            CSSClass.add(vars.ps[index],'text-white');
             if(index>0){
-              CSSClass.remove(ps[index-1],'text-white');
+              CSSClass.remove(vars.ps[index-1],'text-white');
             }
             //index等于p标签长度了表示滚动结束
             // console.log(index)
@@ -300,52 +351,58 @@
       if(vars.interval) clearInterval(vars.interval);
       vars.interval=setInterval(vars.gc_scroll,speed);
 
-      var stopWheel=null;
-      box.addEventListener('mousewheel',function(e){
-        // console.log(bg.getAttribute('style'))
-        // console.log(bg.style.top);
-        // console.log(window.getComputedStyle(bg,null).top)
-        // console.log(e.wheelDelta)
-        can_scroll=false;
-        CSSClass.remove(bg,'bg');
-        CSSClass.remove(bar,'bar');
-        var t=0,
-        scrollDis2=isNaN(parseFloat(bar.style.top))?0:parseFloat(bar.style.top);
-        if(e.wheelDelta>0){//向上滚动，bg向下，top增加,滚动条上滚
-          t=isNaN(parseFloat(bg.style.top))?0:parseFloat(bg.style.top);
-          t=t+pH+pMT;
-          scrollDis2-=(pH+pMT)/bgH*boxH;
-          if(t>=0) t=0,scrollDis2=0;
-          bg.style.cssText=`top:${t}px`;
-          bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis2}px`
-        }else{
-          t=isNaN(parseFloat(bg.style.top))?0:parseFloat(bg.style.top);
-          t=t-pH-pMT;
-          scrollDis2+=(pH+pMT)/bgH*boxH;
-          if(t<=boxH-bgH) t=boxH-bgH,scrollDis2=boxH-barH;
-          bg.style.cssText=`top:${t}px`;
-          bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis2}px`
-        }
-        //停止滚动，歌词，滚动条滚到歌词当前的位置
-        if(stopWheel){
-          clearTimeout(stopWheel);
-        }
-        stopWheel=setTimeout(function(){
-          stopWheel=null;
-          CSSClass.add(bg,'bg');
-          CSSClass.add(bar,'bar');
-          //鼠标滚动的时候歌词不要滚动，鼠标停止滚动后歌词可以滚动
-          can_scroll=true;
-          bg.style.cssText=`top:${mv}px;`;
-          bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis}px`
-        },1000);
-      })
     }
+    var stopWheel=null;
+    box.addEventListener('mousewheel',function(e){
+      // console.log(bg.getAttribute('style'))
+      // console.log(bg.style.top);
+      // console.log(window.getComputedStyle(bg,null).top)
+      // console.log(e.wheelDelta)
+      distance(1);
+      vars.can_scroll=false;
+      //清除过渡css
+      CSSClass.remove(bg,'bg');
+      CSSClass.remove(bar,'bar');
+      var t=isNaN(parseFloat(bg.style.top))?0:parseFloat(bg.style.top),
+      scrollDis2=isNaN(parseFloat(bar.style.top))?0:parseFloat(bar.style.top);
+      if(e.wheelDelta>0){//向上滚动，bg向下，top增加,滚动条上滚
+        t=t+vars.dis;
+        scrollDis2-=vars.singleDis;
+        if(t>=0) t=0,scrollDis2=0;
+      }else{
+        t=t-vars.pH-vars.pMT;
+        scrollDis2+=vars.singleDis;
+        if(t<=vars.boxH-vars.bgH) t=vars.boxH-vars.bgH,scrollDis2=vars.boxH-vars.barH;
+      }
+      bg.style.cssText=`top:${t}px`;
+      bar.style.cssText=`height:${vars.barH}px;top:${scrollDis2}px`
+
+      //停止滚动，歌词，滚动条滚到歌词当前的位置
+      if(stopWheel){
+        clearTimeout(stopWheel);
+      }
+      stopWheel=setTimeout(function(){
+        stopWheel=null;
+        CSSClass.add(bg,'bg');
+        CSSClass.add(bar,'bar');
+        //鼠标滚动的时候歌词不要滚动，鼠标停止滚动后歌词可以滚动
+        vars.can_scroll=true;
+        bg.style.cssText=`top:${vars.mv}px;`;
+        bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
+      },1000);
+    })
     var firstPlay=true;
     btn.addEventListener('click',function(e){
       if(e.target.id=='play'){
         if(audio.paused){
           audio.play();
+          var progressBarMv=0;
+          if(vars.progressInterval) clearInterval(vars.progressInterval);
+          vars.progressInterval=setInterval(()=>{
+            progressBarMv+=vars.progressBarSingleMv;
+            circle.style.cssText=`left:${progressBarMv}px`;
+          },1000)
+          
           if(firstPlay)  {
             fn(vars.speed);
             firstPlay=false;
@@ -364,7 +421,8 @@
         }
       }
       if(e.target.id=='next'){
-        change('music/你的叽叽 - 东西（Cover：林俊呈）.mp3','next','img/311001.jpg')
+        //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
+        change('music/YUI - Rolling star.mp3','next','img/311001.jpg')
       }
       if(e.target.id=='prev'){
         change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
@@ -374,7 +432,7 @@
       firstPlay=true;
       audio.src=src;
       document.body.style=`background:url(${url}) no-repeat fixed`;
-      // document.getComputedStyle(box,'::before')//没法设置伪元素
+      // window.getComputedStyle(box,'::before')//没法设置伪元素
       var arr=document.querySelectorAll('.before');
       for(var a of arr){
         a.style=`background:url(${url}) no-repeat fixed`;
@@ -382,6 +440,16 @@
       get_gc(box,action,fn);
       audio.play();
     }
+    //
+    (()=>{
+      audio.addEventListener('canplay',()=>{
+        console.log('----------|>',audio.duration);
+        vars.duration=audio.duration;
+        vars.progressBarW=parseFloat(window.getComputedStyle(progressBar,null).width)
+        vars.progressBarSingleMv=vars.progressBarW/vars.duration;
+      })
+    })();
+    
     
   </script>
 </body>
