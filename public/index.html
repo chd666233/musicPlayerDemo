@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    body,#box .before,#btn div .before{
+      background:url(img/323799.jpg) no-repeat fixed;
+    }
+    /* box */
+    #box{
+      position: relative;
+      width:600px;
+      height:450px;
+      position:relative;
+      overflow: hidden;
+      margin:50px auto 10px;
+      box-shadow:0 0 20px;
+      
+    }
+    #box .before,#btn div .before{
+      content:'';
+      position: absolute;
+      /* 1 通过这种方式设置宽高，不能通过width 100% height 100% 因为配合margin:-30px指挥导致不能铺满父元素 */
+      top: 0;left: 0;right: 0;bottom: 0;
+      /* background-size:cover; 不能设置cover不然fixed自动对齐图片位置的功能出不来*/
+      filter:blur(30px);
+      margin:-30px;
+      overflow:hidden;
+    }
+    #box .after,#btn div .after{
+      content:'';
+      position: absolute;
+      top: 0;left: 0;right: 0;bottom: 0;
+      background:rgba(0,0,0,.5);
+      filter:blur(30px);
+      margin:-30px;
+    }
+    /* bg */
+    #bg{
+      position: absolute;
+      top:0;left:0;
+      width:100%;
+      position: absolute;
+      z-index:1000;
+      text-align:center;
+    }
+    .bg{
+      transition:top 1s;
+    }
+    p{
+      color:#989898;
+      height:21px;
+      margin:16px 0;
+    }
+    .text-white{
+      color:#fff;
+      transition:color .7s,transform .7s;
+      transform: scale(1.1);
+    }
+    /* bar */
+    #bar{
+      width:10px;height:100px;
+      position: absolute;
+      right:0;top:0;
+      border-radius: 5px;
+      background:rgba(0,0,0,.3);
+      transition:background .5s;
+    }
+    .bar{
+      transition:background .5s,top .5s!important;
+    }
+    #box:hover #bar{
+      background:rgba(0,0,0,.75);
+    }
+    /* 播放按钮等 */
+    #btn{
+      width:600px;
+      margin:0 auto;
+    }
+    #btn div{
+      width:146px;height:50px;
+      display:inline-block;
+      position:relative;
+      background:rgba(0,0,0,.5);
+      border:none;
+      border-radius:5px;
+      outline:none;
+      font-weight:bold;
+      text-align:center;
+      overflow:hidden;
+    }
+    #btn button{
+      position: absolute;
+      left:0;right:0;
+      width:100%;height:100%;
+      background:transparent;
+      border:none;
+      outline: 0;
+      line-height:50px;
+      color:#989898;
+      font-size:20px;
+      z-index:1000;
+    }
+    #btn button:active{
+      color:turquoise;
+    }
+   /* progress-bar */
+   #progress-bar{
+     width:600px;
+     height:10px;
+     margin: 0 auto 10px;
+     position:relative;
+     background:rgba(0, 0, 0, 0.7);
+     border-radius: 5px;
+     transition:background .5s;
+   }
+   #progress-bar:hover{
+    background:rgba(0,0,0,.75);
+   }
+   #circle{
+     position:absolute;
+     left:0;top:-5px;
+     width:18px;height:18px;
+     border-radius:50%;
+     background:red;
+   }
+  </style>
+</head>
+<body>
+  <div id="box" >
+    <div class="before"></div>
+    <div id="bg" class="bg"></div>
+    <div id="bar" class="bar"></div>
+    <div class="after"></div>
+  </div>
+  <div id="progress-bar">
+    <div id="circle"></div>
+  </div>
+  <div>
+    <audio src="music/李学仕 - 直觉.mp3" controls id="audio" style="display:none"></audio>
+		<div id="btn" class="btn">
+			<div>
+        <div class="before"></div>
+        <button id="play">Play</button>
+        <div class="after"></div>
+      </div>
+			<div>
+        <div class="before"></div>
+        <button id="pause">Pause</button>
+        <div class="after"></div>
+      </div>
+			<div>
+        <div class="before"></div>
+        <button id="prev">Prev</button>
+        <div class="after"></div>
+      </div>
+			<div>
+        <div class="before"></div>
+        <button id="next">Next</button>
+        <div class="after"></div>
+      </div>
+  </div>
+  <script>
+    "use strict";
+    // 添加/移出标签的class
+    var CSSClass={};
+    CSSClass.is=function(e,c){
+      if(typeof e =='string') e=document.getElementById(e);
+      var classes=e.className;
+      if(!classes) return false;
+      if(classes==c) return true;
+      // 不能用!!classes.search('\\b'+c+'\\b')，因为有可能返回0,表示位置0
+      return classes.search('\\b'+c+'\\b')!=-1; 
+    }
+    CSSClass.add=function(e,c){
+      if(typeof e=='string') e=document.getElementById(e);
+      if(this.is(e,c)) return;
+      if(e.className) c=' '+c;
+      e.className+=c;
+    }
+    CSSClass.remove=function(e,c){
+      if(typeof e=='string') e=document.getElementById(e);
+      if(!this.is(e,c)) return;//没有这个class返回
+      var reg=new RegExp('\\b'+c+'\\b');
+      //e.className=e.className.replace('\\b'+c+'\\b','');这样replace就不能匹配到，很奇怪
+      e.className=e.className.replace(reg,'');
+    }
+    var vars=(function(){
+      var obj={
+        gc:'',
+        times:[],
+        speed:300,
+        interval:null,
+        gc_scroll:null,
+      };
+      return obj;
+    })();
+    
+
+    
+    //请求歌词
+    function get_gc(box,action,callback){
+        //请求歌词，将歌词插入页面
+      var xhr=new XMLHttpRequest();
+      xhr.onreadystatechange=function(){
+        if(xhr.readyState==4&&xhr.status==200){
+          vars.gc=xhr.responseText;
+          // console.log(vars.gc)
+          //获取的歌词进行全局查找，查找全部内容，将查找结果放到数组里面
+          var arr=vars.gc.match(/\[\d{2}:\d{2}\.\d{2}\][\u4e00-\u9fa5]*.*[\u4e00-\u9fa5]*\s+/g);
+          vars.times=vars.gc.match(/\d{2}:\d{2}.\d{2}/g);
+          // console.log(arr.length,arr)
+          //截取出歌词和时间
+          vars.gc='';
+          for(var i=0;i<arr.length;i++){
+            arr[i]=arr[i].replace(/\[\d{2}:\d{2}\.\d{2}\]|\s*$/g,'');
+            vars.gc+=`<p dateTime="${vars.times[i]}">${arr[i]}</p>`;
+            //把时间转换成毫秒
+            vars.times[i]=vars.times[i].split(/[\.:]/g);
+            vars.times[i]=parseInt(vars.times[i][0])*60*1000+parseInt(vars.times[i][1])*1000+parseInt(vars.times[i][2]);
+          }
+          bg.innerHTML=vars.gc;
+          callback&&callback(vars.speed);
+        }
+      }
+      action=action||'prev';
+      xhr.open('get',`/${action}`,true);
+      xhr.send(null);
+    }
+    get_gc(bg);
+    
+   
+    function fn(speed){
+      speed=speed||800;
+      //获得页面中的歌词的所有P标签
+      var nodeList=bg.childNodes,ps=[],can_scroll=true;
+      for(var i=0;i<nodeList.length;i++){
+        if(nodeList[i].nodeType==1) ps.push(nodeList[i]);
+      }
+      console.log('--->',nodeList.length,vars.times.length)
+      // for(var i=0;i<nodeList.length;i++){
+      //   console.log(nodeList[i].innerHTML)
+      // }
+      if(ps.currentStyle){//ie
+        var pH=parseFloat(ps[0].currentStyle.height);
+        var pMT=parseFloat(ps[0].currentStyle.marginTop);
+        var boxH=parseFloat(box.currentStyle.height);
+      }else if(window.getComputedStyle){
+        var pH=parseFloat(window.getComputedStyle(ps[0],null).height);
+        var pMT=parseFloat(window.getComputedStyle(ps[0],null).marginTop);
+        var bgH=parseFloat(window.getComputedStyle(bg,null).height);
+        var boxH=parseFloat(window.getComputedStyle(box,null).height);
+      }
+      //计算滚动条的长度,设置滚动条高度，用滚动条的高度体现文档的长度
+      // bar.style.cssText=`height:${boxH/bgH*boxH}px`;
+      // bar.setAttribute('style',`height:${boxH/bgH*boxH}px`);
+      bar.style.height=`${boxH/bgH*boxH}px`;
+      bg.style.cssText=`top:${0}px;`;
+      bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${0}px`;
+      var barH=parseFloat(bar.style.height);
+      CSSClass.add(ps[0],'text-white');
+      //歌词滚动闭包
+      var scrollDis=0,mv=0;
+      vars.gc_scroll=(function(){
+        var index=0,time=0;
+        return function(){
+          time+=speed;
+          //歌词滚动
+          if(time>vars.times[index]){
+            //走掉的高度大于box高度的一半
+            if((pH+pMT)*(index+1)>=boxH/2){
+              //剩下的没滚动的总高度大于box高度的一半
+              if((pH+pMT)*(ps.length-index)>=boxH/2){
+                mv-=pH+pMT;
+                //滚动距离
+                scrollDis+=(pH+pMT)/bgH*boxH;
+                if(can_scroll){
+                    //歌词滚动
+                  bg.style.cssText=`top:${mv}px;`;
+                  //滚动条滚动
+                  bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis}px`
+                }
+              }
+            }
+            //给每个歌词的P标签样式
+            CSSClass.add(ps[index],'text-white');
+            if(index>0){
+              CSSClass.remove(ps[index-1],'text-white');
+            }
+            //index等于p标签长度了表示滚动结束
+            // console.log(index)
+            if(index==vars.times.length-1) clearInterval(vars.interval);
+            index++;
+          }
+        }
+      })()
+      if(vars.interval) clearInterval(vars.interval);
+      vars.interval=setInterval(vars.gc_scroll,speed);
+
+      var stopWheel=null;
+      box.addEventListener('mousewheel',function(e){
+        // console.log(bg.getAttribute('style'))
+        // console.log(bg.style.top);
+        // console.log(window.getComputedStyle(bg,null).top)
+        // console.log(e.wheelDelta)
+        can_scroll=false;
+        CSSClass.remove(bg,'bg');
+        CSSClass.remove(bar,'bar');
+        var t=0,
+        scrollDis2=isNaN(parseFloat(bar.style.top))?0:parseFloat(bar.style.top);
+        if(e.wheelDelta>0){//向上滚动，bg向下，top增加,滚动条上滚
+          t=isNaN(parseFloat(bg.style.top))?0:parseFloat(bg.style.top);
+          t=t+pH+pMT;
+          scrollDis2-=(pH+pMT)/bgH*boxH;
+          if(t>=0) t=0,scrollDis2=0;
+          bg.style.cssText=`top:${t}px`;
+          bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis2}px`
+        }else{
+          t=isNaN(parseFloat(bg.style.top))?0:parseFloat(bg.style.top);
+          t=t-pH-pMT;
+          scrollDis2+=(pH+pMT)/bgH*boxH;
+          if(t<=boxH-bgH) t=boxH-bgH,scrollDis2=boxH-barH;
+          bg.style.cssText=`top:${t}px`;
+          bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis2}px`
+        }
+        //停止滚动，歌词，滚动条滚到歌词当前的位置
+        if(stopWheel){
+          clearTimeout(stopWheel);
+        }
+        stopWheel=setTimeout(function(){
+          stopWheel=null;
+          CSSClass.add(bg,'bg');
+          CSSClass.add(bar,'bar');
+          //鼠标滚动的时候歌词不要滚动，鼠标停止滚动后歌词可以滚动
+          can_scroll=true;
+          bg.style.cssText=`top:${mv}px;`;
+          bar.style.cssText=`height:${boxH/bgH*boxH}px;top:${scrollDis}px`
+        },1000);
+      })
+    }
+    var firstPlay=true;
+    btn.addEventListener('click',function(e){
+      if(e.target.id=='play'){
+        if(audio.paused){
+          audio.play();
+          if(firstPlay)  {
+            fn(vars.speed);
+            firstPlay=false;
+          }else{
+            clearInterval(vars.interval);
+            vars.interval=setInterval(vars.gc_scroll,vars.speed);
+          }
+        }
+      }
+      if(e.target.id=='pause'){
+        if(!audio.paused){//不能用played判断是否在播放，应该用audio.paused的t/f判断
+          
+          firstPlay=false;
+          audio.pause();
+          clearInterval(vars.interval);
+        }
+      }
+      if(e.target.id=='next'){
+        change('music/你的叽叽 - 东西（Cover：林俊呈）.mp3','next','img/311001.jpg')
+      }
+      if(e.target.id=='prev'){
+        change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
+      }
+    },false)
+    function change(src,action,url){
+      firstPlay=true;
+      audio.src=src;
+      document.body.style=`background:url(${url}) no-repeat fixed`;
+      // document.getComputedStyle(box,'::before')//没法设置伪元素
+      var arr=document.querySelectorAll('.before');
+      for(var a of arr){
+        a.style=`background:url(${url}) no-repeat fixed`;
+      }
+      get_gc(box,action,fn);
+      audio.play();
+    }
+    
+  </script>
+</body>
+</html>
