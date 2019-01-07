@@ -197,7 +197,13 @@
         gc_scroll:null,
         ps:[],
         can_scroll:true,
-        progressInterval:null
+        progressInterval:null,
+        duration:0,
+        progressBarW:0,
+        progressBarSingleMv:0,
+        circleW:0,
+        len:0,
+        progressBarMv:0
       };
     })();
     
@@ -396,13 +402,16 @@
       if(e.target.id=='play'){
         if(audio.paused){
           audio.play();
-          var progressBarMv=0;
+          //播发器进度条
           if(vars.progressInterval) clearInterval(vars.progressInterval);
           vars.progressInterval=setInterval(()=>{
-            progressBarMv+=vars.progressBarSingleMv;
-            circle.style.cssText=`left:${progressBarMv}px`;
+            vars.progressBarMv+=vars.progressBarSingleMv;
+            if(vars.progressBarMv<=vars.len)
+              circle.style.cssText=`left:${vars.progressBarMv}px`;
+            else clearInterval(vars.progressInterval);
           },1000)
           
+          //判断是否刚进入页面还没有点击播放过
           if(firstPlay)  {
             fn(vars.speed);
             firstPlay=false;
@@ -418,14 +427,35 @@
           firstPlay=false;
           audio.pause();
           clearInterval(vars.interval);
+          clearInterval(vars.progressInterval);
         }
       }
       if(e.target.id=='next'){
+        vars.progressBarMv=0;
+        circle.style.cssText=`left:${vars.progressBarMv}px`;
         //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
-        change('music/YUI - Rolling star.mp3','next','img/311001.jpg')
+        change('music/YUI - Rolling star.mp3','next','img/311001.jpg');
+        
+        if(vars.progressInterval) clearInterval(vars.progressInterval);
+          vars.progressInterval=setInterval(()=>{
+            vars.progressBarMv+=vars.progressBarSingleMv;
+            if(vars.progressBarMv<=vars.len)
+              circle.style.cssText=`left:${vars.progressBarMv}px`;
+            else clearInterval(vars.progressInterval);
+          },1000)
       }
       if(e.target.id=='prev'){
+        vars.progressBarMv=0;
+        circle.style.cssText=`left:${vars.progressBarMv}px`;
         change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
+        
+        if(vars.progressInterval) clearInterval(vars.progressInterval);
+          vars.progressInterval=setInterval(()=>{
+            vars.progressBarMv+=vars.progressBarSingleMv;
+            if(vars.progressBarMv<=vars.len)
+              circle.style.cssText=`left:${vars.progressBarMv}px`;
+            else clearInterval(vars.progressInterval);
+          },1000)
       }
     },false)
     function change(src,action,url){
@@ -440,13 +470,15 @@
       get_gc(box,action,fn);
       audio.play();
     }
-    //
+    //获取音乐长度，计算进度条每次位移距离
     (()=>{
       audio.addEventListener('canplay',()=>{
-        console.log('----------|>',audio.duration);
+        // console.log('----------|>',audio.duration);
         vars.duration=audio.duration;
-        vars.progressBarW=parseFloat(window.getComputedStyle(progressBar,null).width)
-        vars.progressBarSingleMv=vars.progressBarW/vars.duration;
+        vars.progressBarW=parseFloat(window.getComputedStyle(progressBar,null).width);
+        vars.circleW=parseFloat(window.getComputedStyle(circle,null).width);
+        vars.len=vars.progressBarW-vars.circleW;
+        vars.progressBarSingleMv=vars.len/vars.duration;
       })
     })();
     
