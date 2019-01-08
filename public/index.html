@@ -6,6 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Document</title>
   <style>
+    *{padding:0;margin:0}
     body,#box .before,#btn div .before{
       /* fixed自动对齐图片位置的功能出不来 */
       background:url(img/323799.jpg) no-repeat fixed;
@@ -431,31 +432,10 @@
         }
       }
       if(e.target.id=='next'){
-        vars.progressBarMv=0;
-        circle.style.cssText=`left:${vars.progressBarMv}px`;
-        //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
-        change('music/YUI - Rolling star.mp3','next','img/311001.jpg');
-        
-        if(vars.progressInterval) clearInterval(vars.progressInterval);
-          vars.progressInterval=setInterval(()=>{
-            vars.progressBarMv+=vars.progressBarSingleMv;
-            if(vars.progressBarMv<=vars.len)
-              circle.style.cssText=`left:${vars.progressBarMv}px`;
-            else clearInterval(vars.progressInterval);
-          },1000)
+        next();
       }
       if(e.target.id=='prev'){
-        vars.progressBarMv=0;
-        circle.style.cssText=`left:${vars.progressBarMv}px`;
-        change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
-        
-        if(vars.progressInterval) clearInterval(vars.progressInterval);
-          vars.progressInterval=setInterval(()=>{
-            vars.progressBarMv+=vars.progressBarSingleMv;
-            if(vars.progressBarMv<=vars.len)
-              circle.style.cssText=`left:${vars.progressBarMv}px`;
-            else clearInterval(vars.progressInterval);
-          },1000)
+        prev();
       }
     },false)
     function change(src,action,url){
@@ -470,6 +450,35 @@
       get_gc(box,action,fn);
       audio.play();
     }
+    function next(){
+       //进度条重置
+       vars.progressBarMv=0;
+        circle.style.cssText=`left:${vars.progressBarMv}px`;
+        //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
+        change('music/YUI - Rolling star.mp3','next','img/311001.jpg');
+        
+        if(vars.progressInterval) clearInterval(vars.progressInterval);
+          vars.progressInterval=setInterval(()=>{
+            vars.progressBarMv+=vars.progressBarSingleMv;
+            if(vars.progressBarMv<=vars.len)
+              circle.style.cssText=`left:${vars.progressBarMv}px`;
+            else clearInterval(vars.progressInterval);
+          },1000)
+    }
+    function prev(){
+       //进度条重置
+       vars.progressBarMv=0;
+        circle.style.cssText=`left:${vars.progressBarMv}px`;
+        change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
+        
+        if(vars.progressInterval) clearInterval(vars.progressInterval);
+          vars.progressInterval=setInterval(()=>{
+            vars.progressBarMv+=vars.progressBarSingleMv;
+            if(vars.progressBarMv<=vars.len)
+              circle.style.cssText=`left:${vars.progressBarMv}px`;
+            else clearInterval(vars.progressInterval);
+          },1000)
+    }
     //获取音乐长度，计算进度条每次位移距离
     (()=>{
       audio.addEventListener('canplay',()=>{
@@ -479,8 +488,25 @@
         vars.circleW=parseFloat(window.getComputedStyle(circle,null).width);
         vars.len=vars.progressBarW-vars.circleW;
         vars.progressBarSingleMv=vars.len/vars.duration;
-      })
+      });
+      audio.addEventListener('ended',()=>{
+        next();
+      });
     })();
+    
+  
+    circle.addEventListener('mousedown',()=>{
+      circle.addEventListener('mousemove',fnn);
+    });
+    document.addEventListener('mouseup',()=>{
+      circle.removeEventListener('mousemove',fnn);
+    });
+    function fnn(e){
+      console.log(circle.offsetLeft)
+      
+      // console.log(e.layerX,e.layerY)
+    }
+ 
     
     
   </script>
