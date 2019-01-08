@@ -431,6 +431,7 @@
         }
       }
       if(e.target.id=='next'){
+        //进度条重置
         vars.progressBarMv=0;
         circle.style.cssText=`left:${vars.progressBarMv}px`;
         //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
@@ -445,6 +446,7 @@
           },1000)
       }
       if(e.target.id=='prev'){
+        //进度条重置
         vars.progressBarMv=0;
         circle.style.cssText=`left:${vars.progressBarMv}px`;
         change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
@@ -479,8 +481,30 @@
         vars.circleW=parseFloat(window.getComputedStyle(circle,null).width);
         vars.len=vars.progressBarW-vars.circleW;
         vars.progressBarSingleMv=vars.len/vars.duration;
-      })
+      });
+      audio.addEventListener('ended',()=>{
+        //进度条重置
+        vars.progressBarMv=0;
+        circle.style.cssText=`left:${vars.progressBarMv}px`;
+        //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
+        change('music/YUI - Rolling star.mp3','next','img/311001.jpg');
+        
+        if(vars.progressInterval) clearInterval(vars.progressInterval);
+          vars.progressInterval=setInterval(()=>{
+            vars.progressBarMv+=vars.progressBarSingleMv;
+            if(vars.progressBarMv<=vars.len)
+              circle.style.cssText=`left:${vars.progressBarMv}px`;
+            else clearInterval(vars.progressInterval);
+          },1000)
+      });
     })();
+   
+    // circle.addEventListener('mousedown',()=>{
+    //   circle.addEventListener('mousemove',(e)=>{
+    //     console.log(e.)
+    //   })
+    // },false);
+ 
     
     
   </script>
