@@ -206,6 +206,8 @@
         len:0,//进度条圈圈走的路程
         progressBarMv:0,//进度条目前移动的距离
         can_move:true,//进度条是否可以移动
+        index:0,
+        time:0,
       };
     })();
     
@@ -322,17 +324,17 @@
       //歌词滚动闭包
      
       vars.gc_scroll=(function(){
-        var index=0,time=0;
+        vars.index=0,vars.time=0;
         return function(){
-          time+=speed;
+          vars.time+=speed;
           //歌词滚动
-          if(time>vars.times[index]){
+          if(vars.time>vars.times[vars.index]){
             //根据每个p的高度动态获取滚动距离
-            distance(index);
+            distance(vars.index);
             //走掉的高度大于box高度的一半
-            if(vars.dis*(index)>=vars.boxH/2){
+            if(vars.dis*(vars.index)>=vars.boxH/2){
               //剩下的没滚动的总高度大于box高度的一半
-              if(vars.dis*(vars.ps.length-index)>=vars.boxH/2){
+              if(vars.dis*(vars.ps.length-vars.index)>=vars.boxH/2){
                 vars.mv-=vars.dis;
                 //滚动距离
                 vars.scrollDis+=vars.singleDis;
@@ -345,14 +347,14 @@
               }
             }
             //给每个歌词的P标签样式
-            CSSClass.add(vars.ps[index],'text-white');
-            if(index>0){
-              CSSClass.remove(vars.ps[index-1],'text-white');
+            CSSClass.add(vars.ps[vars.index],'text-white');
+            if(vars.index>0){
+              CSSClass.remove(vars.ps[vars.index-1],'text-white');
             }
             //index等于p标签长度了表示滚动结束
             // console.log(index)
-            if(index==vars.times.length-1) clearInterval(vars.interval);
-            index++;
+            if(vars.index==vars.times.length-1) clearInterval(vars.interval);
+            vars.index++;
           }
         }
       })()
@@ -436,7 +438,7 @@
       //进度条重置
       vars.progressBarMv=0;
       circle.style.cssText=`left:${vars.progressBarMv}px`;
-
+      vars.can_move=true;
 
       // firstPlay=true;
       //更换歌曲
@@ -494,18 +496,29 @@
     function fnn(e){
       
       var lf=e.clientX-progressBar.offsetLeft;
-
+      vars.can_move=false;
       if(lf>=vars.len){
         circle.style.cssText=`left:${vars.len}px`;
+        vars.progressBarMv=vars.len;
       }else if(lf>=0){
         circle.style.cssText=`left:${lf}px`;
+        vars.progressBarMv=lf;
       }else{
         circle.style.cssText=`left:0`;
+        vars.progressBarMv=0;
       }
-      // vars.can_move=false;
-      // circle.style.cssText=`left:${circle.offsetLeft}px`;
-  
+      var time=vars.progressBarMv/vars.progressBarSingleMv*1000;
+      if(time>=vars.times[vars.times.length-1]){
+        vars.index=vars.ps.length-1;
+      }else{
+        for(var i=0;i<vars.times.length;i++){
+          if(time<vars.times[i]){
+            vars.index=i-1;
+            break;
+          }
+      }
     }
+  }
  
     
     
