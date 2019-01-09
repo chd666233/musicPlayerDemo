@@ -191,20 +191,21 @@
     }
     var vars=(function(){
       return {
-        gc:'',
-        times:[],
-        speed:300,
-        interval:null,
-        gc_scroll:null,
-        ps:[],
-        can_scroll:true,
-        progressInterval:null,
-        duration:0,
-        progressBarW:0,
-        progressBarSingleMv:0,
-        circleW:0,
-        len:0,
-        progressBarMv:0
+        gc:'',//歌词
+        times:[],//歌词时间轴数组
+        speed:300,//歌词滚动计时器速度
+        interval:null,//歌词滚动计时器
+        gc_scroll:null,//歌词滚动闭包函数
+        ps:[],//歌词p标签
+        can_scroll:true,//歌词是否可以滚动，当鼠标滚动的是否歌词不要滚动
+        progressInterval:null,//进度条计时器
+        duration:0,//歌曲长度
+        progressBarW:0,//进度条长度
+        progressBarSingleMv:0,//进度条每次移动距离
+        circleW:0,//进度条圈圈的宽
+        len:0,//进度条圈圈走的路程
+        progressBarMv:0,//进度条目前移动的距离
+        can_move:true,//进度条是否可以移动
       };
     })();
     
@@ -253,7 +254,7 @@
 
     
     //请求歌词
-    function get_gc(box,action,callback){
+    function get_gc(action,callback){
         //请求歌词，将歌词插入页面
       var xhr=new XMLHttpRequest();
       xhr.onreadystatechange=function(){
@@ -311,7 +312,7 @@
       xhr.open('get',`/${action}`,true);
       xhr.send(null);
     }
-    get_gc(bg);
+    get_gc();
     
    //滚动
     function fn(speed){
@@ -402,16 +403,10 @@
     btn.addEventListener('click',function(e){
       if(e.target.id=='play'){
         if(audio.paused){
+          //播放 
           audio.play();
           //播发器进度条
-          if(vars.progressInterval) clearInterval(vars.progressInterval);
-          vars.progressInterval=setInterval(()=>{
-            vars.progressBarMv+=vars.progressBarSingleMv;
-            if(vars.progressBarMv<=vars.len)
-              circle.style.cssText=`left:${vars.progressBarMv}px`;
-            else clearInterval(vars.progressInterval);
-          },1000)
-          
+          progressInter();
           //判断是否刚进入页面还没有点击播放过
           if(firstPlay)  {
             fn(vars.speed);
@@ -424,7 +419,6 @@
       }
       if(e.target.id=='pause'){
         if(!audio.paused){//不能用played判断是否在播放，应该用audio.paused的t/f判断
-          
           firstPlay=false;
           audio.pause();
           clearInterval(vars.interval);
@@ -439,42 +433,40 @@
       }
     },false)
     function change(src,action,url){
-      firstPlay=true;
+      //进度条重置
+      vars.progressBarMv=0;
+      circle.style.cssText=`left:${vars.progressBarMv}px`;
+
+
+      // firstPlay=true;
+      //更换歌曲
       audio.src=src;
+      //更换背景
       document.body.style=`background:url(${url}) no-repeat fixed`;
       // window.getComputedStyle(box,'::before')//没法设置伪元素
       var arr=document.querySelectorAll('.before');
       for(var a of arr){
         a.style=`background:url(${url}) no-repeat fixed`;
       }
-      get_gc(box,action,fn);
+      //获取歌词
+      get_gc(action,fn);
+      //播放
       audio.play();
+      //进度条
+      progressInter();
     }
-    function next(){
-       //进度条重置
-       vars.progressBarMv=0;
-        circle.style.cssText=`left:${vars.progressBarMv}px`;
+    function next(){ 
         //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
         change('music/YUI - Rolling star.mp3','next','img/311001.jpg');
-        
-        if(vars.progressInterval) clearInterval(vars.progressInterval);
-          vars.progressInterval=setInterval(()=>{
-            vars.progressBarMv+=vars.progressBarSingleMv;
-            if(vars.progressBarMv<=vars.len)
-              circle.style.cssText=`left:${vars.progressBarMv}px`;
-            else clearInterval(vars.progressInterval);
-          },1000)
     }
     function prev(){
-       //进度条重置
-       vars.progressBarMv=0;
-        circle.style.cssText=`left:${vars.progressBarMv}px`;
         change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
-        
-        if(vars.progressInterval) clearInterval(vars.progressInterval);
+    }
+    function progressInter(){
+      if(vars.progressInterval) clearInterval(vars.progressInterval);
           vars.progressInterval=setInterval(()=>{
             vars.progressBarMv+=vars.progressBarSingleMv;
-            if(vars.progressBarMv<=vars.len)
+            if(vars.progressBarMv<=vars.len&&vars.can_move)
               circle.style.cssText=`left:${vars.progressBarMv}px`;
             else clearInterval(vars.progressInterval);
           },1000)
@@ -501,8 +493,9 @@
     });
     function fnn(e){
       console.log(circle.offsetLeft)
-      
-      // console.log(e.layerX,e.layerY)
+      vars.can_move=false;
+      circle.style.cssText=`left:${circle.offsetLeft}px`;
+  
     }
  
     
