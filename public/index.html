@@ -123,7 +123,7 @@
    }
    #circle{
      position:absolute;
-     left:0;top:-5px;
+     left:0;top:-4px;
      width:18px;height:18px;
      border-radius:50%;
      background:red;
@@ -486,15 +486,24 @@
       });
     })();    
     circle.addEventListener('mousedown',()=>{
-      circle.addEventListener('mousemove',fnn);
+      document.addEventListener('mousemove',fnn);
     });
     document.addEventListener('mouseup',()=>{
-      circle.removeEventListener('mousemove',fnn);
+      document.removeEventListener('mousemove',fnn);
     });
     function fnn(e){
-      console.log(circle.offsetLeft)
-      vars.can_move=false;
-      circle.style.cssText=`left:${circle.offsetLeft}px`;
+      
+      var lf=e.clientX-progressBar.offsetLeft;
+
+      if(lf>=vars.len){
+        circle.style.cssText=`left:${vars.len}px`;
+      }else if(lf>=0){
+        circle.style.cssText=`left:${lf}px`;
+      }else{
+        circle.style.cssText=`left:0`;
+      }
+      // vars.can_move=false;
+      // circle.style.cssText=`left:${circle.offsetLeft}px`;
   
     }
  
