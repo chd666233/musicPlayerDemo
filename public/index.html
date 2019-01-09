@@ -208,6 +208,8 @@
         can_move:true,//进度条是否可以移动
         index:0,
         time:0,
+        mv2:0,
+        scrollDis3:0,
       };
     })();
     
@@ -494,7 +496,6 @@
       document.removeEventListener('mousemove',fnn);
     });
     function fnn(e){
-      
       var lf=e.clientX-progressBar.offsetLeft;
       vars.can_move=false;
       if(lf>=vars.len){
@@ -508,16 +509,34 @@
         vars.progressBarMv=0;
       }
       var time=vars.progressBarMv/vars.progressBarSingleMv*1000;
+      var index=0;
       if(time>=vars.times[vars.times.length-1]){
-        vars.index=vars.ps.length-1;
+        index=vars.ps.length-1;
       }else{
         for(var i=0;i<vars.times.length;i++){
           if(time<vars.times[i]){
-            vars.index=i-1;
+            index=i-1;
             break;
           }
+        }
       }
-    }
+      //计算滚动距离
+      if(vars.index<index){
+        for(var t=vars.index;t<=index;t++){
+          distance(t);
+          vars.mv2+=vars.dis;
+          vars.scrollDis3+=vars.singleDis;
+        }
+      }
+      console.log(vars.mv,vars.scrollDis,vars.mv2)
+      vars.mv-=vars.mv2;
+      vars.scrollDis+=vars.scrollDis3;
+      
+      bg.style.cssText=`top:${vars.mv}px;`;
+      bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
+      vars.time=time;
+      
+      
   }
  
     
