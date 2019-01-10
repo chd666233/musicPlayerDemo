@@ -55,6 +55,7 @@
       color:#989898;
       /* height:21px; */
       margin:16px 0;
+      user-select:none;
     }
     .text-white{
       color:#fff;
@@ -80,6 +81,7 @@
     #btn{
       width:600px;
       margin:0 auto;
+      user-select:none;
     }
     #btn div{
       width:146px;height:50px;
@@ -382,7 +384,7 @@
         scrollDis2-=vars.singleDis;
         if(t>=0) t=0,scrollDis2=0;
       }else{
-        t=t-vars.pH-vars.pMT;
+        t=t-vars.dis;
         scrollDis2+=vars.singleDis;
         if(t<=vars.boxH-vars.bgH) t=vars.boxH-vars.bgH,scrollDis2=vars.boxH-vars.barH;
       }
@@ -491,10 +493,15 @@
     })();    
     circle.addEventListener('mousedown',()=>{
       document.addEventListener('mousemove',fnn);
+      
     });
     document.addEventListener('mouseup',()=>{
       document.removeEventListener('mousemove',fnn);
     });
+    document.addEventListener('dragstart',(e)=>{
+      e.preventDefault();
+      // e.stopPropagation();
+    })
     function fnn(e){
       var lf=e.clientX-progressBar.offsetLeft;
       vars.can_move=false;
@@ -510,33 +517,22 @@
       }
       var time=vars.progressBarMv/vars.progressBarSingleMv*1000;
       var index=0;
-      if(time>=vars.times[vars.times.length-1]){
-        index=vars.ps.length-1;
-      }else{
-        for(var i=0;i<vars.times.length;i++){
-          if(time<vars.times[i]){
-            index=i-1;
-            break;
-          }
+
+      for(var i=0;i<vars.times.length;i++){
+        if(time<vars.times[i]){
+          index=i-1;
+          break;
+        }
+        if(i==vars.times.length-1&&time>vars.times[i]){
+          index=vars.times.length-1;
         }
       }
-      //计算滚动距离
-      if(vars.index<index){
-        for(var t=vars.index;t<=index;t++){
-          distance(t);
-          vars.mv2+=vars.dis;
-          vars.scrollDis3+=vars.singleDis;
-        }
-      }
-      console.log(vars.mv,vars.scrollDis,vars.mv2)
-      vars.mv-=vars.mv2;
-      vars.scrollDis+=vars.scrollDis3;
+      console.log(index,time,vars.times)
       
       bg.style.cssText=`top:${vars.mv}px;`;
       bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
       vars.time=time;
-      
-      
+  
   }
  
     
