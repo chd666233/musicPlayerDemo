@@ -212,6 +212,8 @@
         time:0,
         mv2:0,
         scrollDis3:0,
+        time1:0,
+        index1:0
       };
     })();
     
@@ -329,6 +331,14 @@
      
       vars.gc_scroll=(function(){
         vars.index=0,vars.time=0;
+        var dis=0;
+        for(var i=0;i<vars.ps.length;i++){
+          distance(i);
+          dis+=vars.dis;
+          if(dis>=vars.boxH/2) break;
+        }
+        i++;
+        console.log(i,'----')
         return function(){
           vars.time+=speed;
           //歌词滚动
@@ -338,7 +348,8 @@
             //走掉的高度大于box高度的一半
             if(vars.dis*(vars.index)>=vars.boxH/2){
               //剩下的没滚动的总高度大于box高度的一半
-              if(vars.dis*(vars.ps.length-vars.index)>=vars.boxH/2){
+              if(vars.dis*(vars.index-i)<vars.bgH-vars.boxH){
+              // if(vars.dis*(vars.ps.length-vars.index+1)>=vars.boxH/2){
                 vars.mv-=vars.dis;
                 //滚动距离
                 vars.scrollDis+=vars.singleDis;
@@ -493,10 +504,16 @@
     })();    
     circle.addEventListener('mousedown',()=>{
       document.addEventListener('mousemove',fnn);
-      
     });
     document.addEventListener('mouseup',()=>{
       document.removeEventListener('mousemove',fnn);
+      vars.mv2=0,vars.scrollDis3=0;
+      for(var i=0;i<vars.index1;i++){
+        distance(i);
+        vars.mv2+=vars.dis;
+        vars.scrollDis3+=vars.singleDis;
+      }
+      console.log(vars.mv2,vars.scrollDis3)
     });
     document.addEventListener('dragstart',(e)=>{
       e.preventDefault();
@@ -515,23 +532,23 @@
         circle.style.cssText=`left:0`;
         vars.progressBarMv=0;
       }
-      var time=vars.progressBarMv/vars.progressBarSingleMv*1000;
-      var index=0;
+      vars.time1=vars.progressBarMv/vars.progressBarSingleMv*1000;
+      vars.index1=0;
 
       for(var i=0;i<vars.times.length;i++){
-        if(time<vars.times[i]){
-          index=i-1;
+        if(vars.time1<vars.times[i]){
+          vars.index1=i-1;
           break;
         }
-        if(i==vars.times.length-1&&time>vars.times[i]){
-          index=vars.times.length-1;
+        if(i==vars.times.length-1&&vars.time1>vars.times[i]){
+          vars.index1=vars.times.length-1;
         }
       }
-      console.log(index,time,vars.times)
+      // console.log(index,time,vars.times)
       
-      bg.style.cssText=`top:${vars.mv}px;`;
-      bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
-      vars.time=time;
+      // bg.style.cssText=`top:${vars.mv}px;`;
+      // bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
+      // vars.time=time;
   
   }
  
