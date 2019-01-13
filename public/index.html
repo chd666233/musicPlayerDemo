@@ -216,10 +216,12 @@
         scrollDis:0,//滚动条滚动的距离,
         mv:0,//背景移动的距离
         start_mv:0,//用于判断是否开始移动背景
-        mv2:0,
-        scrollDis3:0,
-        time1:0,
-        index1:0
+        start_mv_temp:0,
+        mv_temp:0,
+        scrollDis_temp:0,
+        time_temp:0,
+        index_temp:0,
+        circle_down:false
       };
     })();
     
@@ -337,14 +339,6 @@
      
       vars.gc_scroll=(function(){
         vars.index=0,vars.time=0;
-      /*   var dis=0;
-        for(var i=0;i<vars.ps.length;i++){
-          distance(i);
-          dis+=vars.dis;
-          if(dis>=vars.boxH/2) break;
-        }
-        i++;
-        console.log(i,'----') */
         return function(){
           vars.time+=speed;
           //歌词滚动
@@ -353,6 +347,7 @@
             distance(vars.index);
             //走掉的高度大于box高度的一半
             vars.start_mv+=vars.dis;
+            
             if(vars.start_mv>=vars.boxH/2){
               vars.mv-=vars.dis;
               //滚动距离
@@ -509,55 +504,86 @@
       audio.addEventListener('ended',()=>{
         next();
       });
-    })();    
+    })();
+
     circle.addEventListener('mousedown',()=>{
-      document.addEventListener('mousemove',fnn);
+      vars.circle_down=true;
+      window.addEventListener('mousemove',fnn);
     });
-    document.addEventListener('mouseup',()=>{
-      document.removeEventListener('mousemove',fnn);
-      vars.mv2=0,vars.scrollDis3=0;
-      for(var i=0;i<vars.index1;i++){
-        distance(i);
-        vars.mv2+=vars.dis;
-        vars.scrollDis3+=vars.singleDis;
+    window.addEventListener('mouseup',()=>{
+      if(vars.circle_down){
+        console.log('----------==================')
+        window.removeEventListener('mousemove',fnn);
+        //计算该位置的进度条对应的时间
+        vars.time_temp=vars.progressBarMv/vars.progressBarSingleMv*1000;
+        //计算该位置对应的p的下标
+        for(var i=0;i<vars.times.length;i++){
+          if(vars.time_temp<vars.times[i]){
+            vars.index_temp=i-1;
+            break;
+          }
+          if(i==vars.times.length-1&&vars.time_temp>vars.times[i]){
+            vars.index_temp=vars.times.length-1;
+          }
+        }
+
+        // console.log(vars.index_temp,vars.time_temp,vars.times)
+      
+        //根据P的下标计算背景移动距离和滚动条滚动距离
+        vars.mv_temp=0,vars.scrollDis_temp=0,vars.start_mv_temp=0;
+        for(var i=0;i<vars.index_temp;i++){
+          distance(i);
+          vars.start_mv_temp+=vars.dis;
+          //走掉的距离大于box的一半开始移动
+          if(vars.start_mv_temp>=vars.boxH/2){
+            vars.mv_temp-=vars.dis;
+            vars.scrollDis_temp+=vars.singleDis;
+          }
+        }
+        //移动的距离大于最大距离，设置为最大距离
+        if(Math.abs(vars.mv_temp)>vars.bgH-vars.boxH){
+          vars.mv_temp=-vars.bgH+vars.boxH;
+          vars.scrollDis_temp=vars.boxH-vars.barH;
+        }
+        bg.style.cssText=`top:${vars.mv_temp}px;`;
+        bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis_temp}px`;
+        
+        //这里很奇怪，一定要vars.index-1才是正确的有样式的P，vars.index并没有text-white样式
+        CSSClass.remove(vars.ps[vars.index-1],'text-white');
+        CSSClass.add(vars.ps[vars.index_temp],'text-white');
+        
+        audio.currentTime=vars.time_temp/1000;
+
+        vars.mv=vars.mv_temp;
+        vars.scrollDis=vars.scrollDis_temp;
+        vars.index=vars.index_temp;
+        vars.time=vars.time_temp;
+        vars.start_mv=vars.start_mv_temp;
+        vars.circle_down=false;
       }
-      console.log(vars.mv2,vars.scrollDis3)
+      
     });
+
     document.addEventListener('dragstart',(e)=>{
       e.preventDefault();
       // e.stopPropagation();
     })
     function fnn(e){
+      //进度条位置
       var lf=e.clientX-progressBar.offsetLeft;
-      vars.can_move=false;
-      if(lf>=vars.len){
-        circle.style.cssText=`left:${vars.len}px`;
-        vars.progressBarMv=vars.len;
-      }else if(lf>=0){
-        circle.style.cssText=`left:${lf}px`;
-        vars.progressBarMv=lf;
-      }else{
-        circle.style.cssText=`left:0`;
-        vars.progressBarMv=0;
-      }
-      vars.time1=vars.progressBarMv/vars.progressBarSingleMv*1000;
-      vars.index1=0;
-
-      for(var i=0;i<vars.times.length;i++){
-        if(vars.time1<vars.times[i]){
-          vars.index1=i-1;
-          break;
-        }
-        if(i==vars.times.length-1&&vars.time1>vars.times[i]){
-          vars.index1=vars.times.length-1;
-        }
-      }
-      // console.log(index,time,vars.times)
       
-      // bg.style.cssText=`top:${vars.mv}px;`;
-      // bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
-      // vars.time=time;
   
+      //进度条位置大于最大距离，设置成最大距离；
+      //小于0，设置成0
+      if(lf>=vars.len){
+        lf=vars.len; 
+      }else if(lf<0){
+        lf=0;
+      }
+      
+      //移动进度条
+      circle.style.cssText=`left:${lf}px`;
+      vars.progressBarMv=lf;
   }
  
     
