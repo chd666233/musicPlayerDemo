@@ -146,7 +146,7 @@
     <div id="circle"></div>
   </div>
   <div>
-    <audio src="music/李学仕 - 直觉.mp3" controls id="audio" style="display:none"></audio>
+    <audio src="music/你的叽叽 - 东西（Cover：林俊呈）.mp3" controls id="audio" style="display:none"></audio>
 		<div id="btn" class="btn">
 			<div>
         <div class="before"></div>
@@ -372,7 +372,8 @@
             }
             //index等于p标签长度了表示滚动结束
             // console.log(index)
-            if(vars.index==vars.times.length-1) clearInterval(vars.interval);
+            //这里不要结束了，如果拖拽滚动条到最后，计时器结束了，然后进度条又拖拽到前面，没有计时器了
+            // if(vars.index==vars.times.length-1) clearInterval(vars.interval);
             vars.index++;
           }
         }
@@ -479,10 +480,10 @@
     }
     function next(){ 
         //YUI - Rolling star.mp3 你的叽叽 - 东西（Cover：林俊呈）.mp3  泰仁 - 그 남자의 거짓말.mp3
-        change('music/YUI - Rolling star.mp3','next','img/311001.jpg');
+        change('music/泰仁 - 그 남자의 거짓말.mp3','next','img/311001.jpg');
     }
     function prev(){
-        change('music/李学仕 - 直觉.mp3','prev','img/323799.jpg');
+        change('music/你的叽叽 - 东西（Cover：林俊呈）.mp3','prev','img/323799.jpg');
     }
     function progressInter(){
       if(vars.progressInterval) clearInterval(vars.progressInterval);
