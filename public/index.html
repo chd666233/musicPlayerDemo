@@ -255,6 +255,7 @@
       // bar.setAttribute('style',`height:${boxH/bgH*boxH}px`);
       vars.barH=vars.boxH/vars.bgH*vars.boxH;
       vars.scrollDis=0,vars.mv=0,vars.start_mv=0;
+      vars.index=0,vars.time=0;
     }
     //因为条歌词的p标签不一定是1行，可能是多行，它们之间的行数不一定相等，所以需要动态获取。
     function distance(i){
@@ -333,12 +334,12 @@
    //滚动
     function fn(speed){
       speed=speed||800;
-      
-      CSSClass.add(vars.ps[0],'text-white');
+      // CSSClass.add(vars.ps[0],'text-white');
       //歌词滚动闭包
-     
       vars.gc_scroll=(function(){
-        vars.index=0,vars.time=0;
+        //不能在这里将index和time置为0，因为如果第一次进入页面，音乐没有被点击播放的时候直接拖拽了进度条
+        //会设置一次index和time然后点击播放，在这里index和time又被置为0,出现bug
+        // vars.index=0,vars.time=0;
         return function(){
           vars.time+=speed;
           //歌词滚动
@@ -386,6 +387,7 @@
       // console.log(bg.style.top);
       // console.log(window.getComputedStyle(bg,null).top)
       // console.log(e.wheelDelta)
+      //选第二个p的高度作为每次滚动的高度
       distance(1);
       vars.can_scroll=false;
       //清除过渡css
@@ -428,7 +430,7 @@
           //播发器进度条
           progressInter();
           //判断是否刚进入页面还没有点击播放过
-          if(firstPlay)  {
+          if(firstPlay){
             fn(vars.speed);
             firstPlay=false;
           }else{
@@ -512,6 +514,7 @@
     });
     window.addEventListener('mouseup',()=>{
       if(vars.circle_down){
+    
         console.log('----------==================')
         window.removeEventListener('mousemove',fnn);
         //计算该位置的进度条对应的时间
@@ -549,17 +552,19 @@
         bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis_temp}px`;
         
         //这里很奇怪，一定要vars.index-1才是正确的有样式的P，vars.index并没有text-white样式
-        CSSClass.remove(vars.ps[vars.index-1],'text-white');
+        if(vars.index>0)
+          CSSClass.remove(vars.ps[vars.index-1],'text-white');
         CSSClass.add(vars.ps[vars.index_temp],'text-white');
         
         audio.currentTime=vars.time_temp/1000;
-
+        
         vars.mv=vars.mv_temp;
         vars.scrollDis=vars.scrollDis_temp;
         vars.index=vars.index_temp;
         vars.time=vars.time_temp;
         vars.start_mv=vars.start_mv_temp;
         vars.circle_down=false;
+        vars.firstPlay=false;
       }
       
     });
