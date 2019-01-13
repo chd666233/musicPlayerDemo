@@ -54,7 +54,10 @@
     p{
       color:#989898;
       /* height:21px; */
-      margin:16px 0;
+      margin:0 0 0 0;
+      /* padding:16px 0 0 0; */
+      line-height: 32px;
+      min-height:32px;
       user-select:none;
     }
     .text-white{
@@ -208,8 +211,11 @@
         len:0,//进度条圈圈走的路程
         progressBarMv:0,//进度条目前移动的距离
         can_move:true,//进度条是否可以移动
-        index:0,
-        time:0,
+        index:0,//当前滚动的p的下标
+        time:0,//当前的播放时间
+        scrollDis:0,//滚动条滚动的距离,
+        mv:0,//背景移动的距离
+        start_mv:0,//用于判断是否开始移动背景
         mv2:0,
         scrollDis3:0,
         time1:0,
@@ -246,7 +252,7 @@
       // bar.style.cssText=`height:${boxH/bgH*boxH}px`;
       // bar.setAttribute('style',`height:${boxH/bgH*boxH}px`);
       vars.barH=vars.boxH/vars.bgH*vars.boxH;
-      vars.scrollDis=0,vars.mv=0;
+      vars.scrollDis=0,vars.mv=0,vars.start_mv=0;
     }
     //因为条歌词的p标签不一定是1行，可能是多行，它们之间的行数不一定相等，所以需要动态获取。
     function distance(i){
@@ -331,14 +337,14 @@
      
       vars.gc_scroll=(function(){
         vars.index=0,vars.time=0;
-        var dis=0;
+      /*   var dis=0;
         for(var i=0;i<vars.ps.length;i++){
           distance(i);
           dis+=vars.dis;
           if(dis>=vars.boxH/2) break;
         }
         i++;
-        console.log(i,'----')
+        console.log(i,'----') */
         return function(){
           vars.time+=speed;
           //歌词滚动
@@ -346,19 +352,21 @@
             //根据每个p的高度动态获取滚动距离
             distance(vars.index);
             //走掉的高度大于box高度的一半
-            if(vars.dis*(vars.index)>=vars.boxH/2){
-              //剩下的没滚动的总高度大于box高度的一半
-              if(vars.dis*(vars.index-i)<vars.bgH-vars.boxH){
-              // if(vars.dis*(vars.ps.length-vars.index+1)>=vars.boxH/2){
-                vars.mv-=vars.dis;
-                //滚动距离
-                vars.scrollDis+=vars.singleDis;
-                if(vars.can_scroll){
-                    //歌词滚动
-                  bg.style.cssText=`top:${vars.mv}px;`;
-                  //滚动条滚动
-                  bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
-                }
+            vars.start_mv+=vars.dis;
+            if(vars.start_mv>=vars.boxH/2){
+              vars.mv-=vars.dis;
+              //滚动距离
+              vars.scrollDis+=vars.singleDis;
+              //如果滚动的距离超过了vars.bgH-vars.boxH，那么吧背景设置到底部，滚动条设置到底部
+              if(Math.abs(vars.mv)>vars.bgH-vars.boxH){
+                vars.scrollDis=vars.boxH-vars.barH;
+                vars.mv=-vars.bgH+vars.boxH;
+              }
+              if(vars.can_scroll){
+                //歌词滚动
+                bg.style.cssText=`top:${vars.mv}px;`;
+                //滚动条滚动
+                bar.style.cssText=`height:${vars.barH}px;top:${vars.scrollDis}px`
               }
             }
             //给每个歌词的P标签样式
