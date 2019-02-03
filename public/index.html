@@ -407,13 +407,15 @@
       }
       bg.style.cssText=`top:${t}px`;
       bar.style.cssText=`height:${vars.barH}px;top:${scrollDis2}px`
-
+      console.log("************")
       //停止滚动，歌词，滚动条滚到歌词当前的位置
       if(stopWheel){
+        console.log("++++++++++")
         clearTimeout(stopWheel);
       }
       stopWheel=setTimeout(function(){
-        stopWheel=null;
+        console.log("---------------")
+        // stopWheel=null;
         CSSClass.add(bg,'bg');
         CSSClass.add(bar,'bar');
         //鼠标滚动的时候歌词不要滚动，鼠标停止滚动后歌词可以滚动
